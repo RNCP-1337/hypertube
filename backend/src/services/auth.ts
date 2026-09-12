@@ -169,8 +169,7 @@ export async function revokeAllSessions(userId: number): Promise<void> {
 
 export const refreshCookieOptions = {
   httpOnly: true,
-  // Strict is safe here: the refresh endpoint is only ever called by our own
-  // SPA on the same origin, and it removes CSRF from the picture entirely.
+  // strict is fine: refresh is only ever called by our own SPA, same origin
   sameSite: 'strict' as const,
   secure: isProduction,
   path: '/api/auth',
@@ -183,8 +182,7 @@ export async function authenticate(
 ): Promise<UserRecord | null> {
   const row = await findUserByIdentifier(identifier);
 
-  // Always run a verification, even for an unknown user, so the response time
-  // does not reveal whether the account exists.
+  // verify even for an unknown user so timing doesn't leak account existence
   const ok = await verifyPassword(password, row?.password_hash ?? null);
   if (!row || !ok) return null;
   return toUserRecord(row);

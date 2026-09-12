@@ -115,8 +115,7 @@ export function transcodeToMp4(
 
   args.push('-i', filePath);
 
-  // Take the first video and audio stream only; subtitles are served
-  // separately as WebVTT so the player can toggle them.
+  // first video/audio stream only - subtitles are served separately as WebVTT
   args.push('-map', '0:v:0', '-map', '0:a:0?', '-sn', '-dn');
 
   if (canCopyVideo) {
@@ -245,7 +244,7 @@ export function normaliseImage(
         '-loglevel', 'error',
         '-y',
         '-i', inputPath,
-        // A single frame only: an animated bomb cannot loop us.
+        // grab a single frame, ignore animated formats
         '-frames:v', '1',
         '-vf', `scale='min(${size},iw)':-2`,
         '-f', 'image2',

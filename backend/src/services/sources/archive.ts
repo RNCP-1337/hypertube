@@ -74,13 +74,11 @@ function toMovie(doc: ArchiveDoc): SourceMovie | null {
     runtime: parseRuntime(doc.runtime),
     // avg_rating is out of 5; the app displays a /10 grade like IMDb.
     rating: Number.isFinite(rating) && rating > 0 ? Math.min(10, rating * 2) : undefined,
-    // Downloads span several orders of magnitude; a log scale keeps the value
-    // comparable with the other sources when the front page is ranked.
+    // log scale so downloads (which span orders of magnitude) compare fairly with other sources
     popularity: doc.downloads ? Math.round(Math.log10(doc.downloads + 1) * 10) : 0,
     torrents: [
       {
-        // An Archive item ships one torrent holding every encoding it has, so
-        // a single resolution label would be misleading.
+        // one torrent holds every encoding, so no single resolution label fits
         quality: 'multi',
         sizeBytes,
         seeders: 0, // filled in by the tracker announce once playback starts
@@ -97,8 +95,7 @@ function escapeLucene(input: string): string {
   return input.replace(/["\\]/g, '\\$&').slice(0, 120);
 }
 
-// Curated public-domain film collections; without this the "movies" mediatype
-// also returns home videos, test clips and screen recordings.
+// restrict to these collections - mediatype:movies alone also returns home videos and test clips
 const COLLECTIONS = [
   'feature_films',
   'classic_cartoons',

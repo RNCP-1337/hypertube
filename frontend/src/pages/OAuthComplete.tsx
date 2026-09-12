@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Loading } from '../components/ui';
 
-// The OmniAuth callback sets the refresh cookie and lands here; one silent
-// refresh turns that into a session.
+// oauth callback sets the refresh cookie, then we silently refresh into a session
 export default function OAuthComplete() {
   const { t } = useTranslation();
   const { refresh, user, loading } = useAuth();

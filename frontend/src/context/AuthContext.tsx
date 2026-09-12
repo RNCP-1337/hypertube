@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // A failed refresh anywhere in the app clears the session here too.
+  // failed refresh anywhere clears the session here too
   useEffect(() => {
     onUnauthenticated(() => {
       if (mounted.current) setUserState(null);

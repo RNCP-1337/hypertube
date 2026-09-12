@@ -98,8 +98,7 @@ export class PieceManager extends EventEmitter {
     return true;
   }
 
-  // Mark a range as urgent without moving the playhead: small side files
-  // (subtitles) must not push the video buffer out of the way.
+  // mark urgent without moving the playhead subtitle fetches shouldn't steal the video buffer
   pin(from: number, to: number): void {
     for (let i = from; i <= to; i += 1) {
       if (!this.have.get(i)) this.pinned.add(i);

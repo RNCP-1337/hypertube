@@ -22,8 +22,7 @@ export default function VideoPlayer({ movie, onWatched }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [subtitles, setSubtitles] = useState(movie.subtitles);
 
-  // The <video> element cannot send an Authorization header, so the stream URL
-  // carries a short-lived token instead.
+  // video tag can't send an Authorization header, so pass the token as a query param
   const streamUrl = `/api/movies/${movie.id}/stream?token=${encodeURIComponent(
     getAccessToken() ?? '',
   )}`;
@@ -115,7 +114,7 @@ export default function VideoPlayer({ movie, onWatched }: Props) {
               onPause={() => reportProgress(false)}
               onError={() => setError(t('movie.streamError'))}
             >
-              <source src={streamUrl} type="video/mp4" />
+              <source src={streamUrl} />
               {subtitles.map((track) => (
                 <track
                   key={track.language}

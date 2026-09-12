@@ -15,8 +15,7 @@ export interface TorrentFileEntry {
   path: string[];
   length: number;
   offset: number;
-  // BEP-47 padding: alignment filler, defined to be zeros. It occupies room in
-  // the address space but exists on no server and on no peer's disk.
+  // BEP-47 padding: zero-filled alignment, not present on disk or in the swarm
   padding: boolean;
 }
 
@@ -134,8 +133,7 @@ export function parseMetadataPayload(infoBytes: Buffer, expectedHash: Buffer): M
   if (!actual.equals(expectedHash)) {
     throw new BencodeError('metadata info-hash mismatch (peer sent forged metadata)');
   }
-  // Wrap the raw info bytes in a one-key dictionary so the generic decoder
-  // can read them back while `infoBytes` stays byte-identical for the hash.
+  // wrap info bytes in a one-key dict so the decoder can parse them without touching infoBytes
   const { root } = decodeTorrentFile(
     Buffer.concat([Buffer.from('d4:info', 'ascii'), infoBytes, Buffer.from('e', 'ascii')]),
   );

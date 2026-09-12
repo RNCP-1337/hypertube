@@ -28,8 +28,7 @@ export async function oauthRoutes(app: FastifyInstance): Promise<void> {
     '/token',
     { config: { rateLimit: { max: 30, timeWindow: '5 minutes' } } },
     async (request, reply) => {
-      // RFC 6749 mandates application/x-www-form-urlencoded; JSON is accepted
-      // too because that is what most clients actually send today.
+      // RFC 6749 wants form-urlencoded but we accept JSON too, most clients send that
       const parsed = tokenRequestSchema.safeParse(request.body);
       if (!parsed.success) {
         reply.code(400).send({
@@ -202,6 +201,6 @@ export async function oauthRoutes(app: FastifyInstance): Promise<void> {
 
     redirect.searchParams.set('code', code);
     if (params.state) redirect.searchParams.set('state', params.state);
-    reply.redirect(302, redirect.toString());
+    reply.redirect(redirect.toString(), 302);
   });
 }

@@ -38,9 +38,8 @@ export class TorrentStorage {
       if (file.padding) continue;
       await fs.mkdir(dirname(file.absolutePath), { recursive: true });
 
-      // 'r+' and not 'a+': an append-mode descriptor ignores the position
-      // argument of write() on Linux, which would send every piece to the end
-      // of the file instead of its real offset.
+      // 'r+' not 'a+': append mode ignores write()'s position arg on Linux,
+      // which would land every piece at EOF instead of its real offset
       let handle: fs.FileHandle;
       try {
         handle = await fs.open(file.absolutePath, 'r+');
@@ -135,9 +134,7 @@ export class TorrentStorage {
       return real.length > 0 ? largest(real) : null;
     }
 
-    // Torrents from archival sources bundle several encodings of the same film.
-    // A container the browser plays natively avoids a transcode entirely, and
-    // those derivatives are also far smaller than the original masters.
+    // prefer a browser-native container over the original master - skips transcoding, usually smaller too
     const native = videos.filter((f) => NATIVE.test(name(f)));
     return largest(native.length > 0 ? native : videos);
   }

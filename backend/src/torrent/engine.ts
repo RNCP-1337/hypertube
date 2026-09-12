@@ -123,7 +123,7 @@ class TorrentEngine {
     if (input.torrentUrl) {
       const buffer = await fetchBuffer(input.torrentUrl, { maxBytes: 8 * 1024 * 1024 });
       const meta = parseTorrent(buffer);
-      // Cache the .torrent so a restart does not need the source to be online.
+      // cache the .torrent so a restart doesn't need the source online
       await fs
         .writeFile(`${config.TORRENT_DIR}/${meta.infoHashHex}.torrent`, buffer)
         .catch(() => undefined);
@@ -132,7 +132,7 @@ class TorrentEngine {
 
     if (input.magnetUri) {
       const magnet = parseMagnet(input.magnetUri);
-      // If we already cached the .torrent, skip the metadata exchange entirely.
+      // skip metadata exchange if we already cached the .torrent
       const cached = await fs
         .readFile(`${config.TORRENT_DIR}/${magnet.infoHashHex}.torrent`)
         .catch(() => null);

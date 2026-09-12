@@ -47,8 +47,7 @@ const RATE_WINDOW_MS = 4_000;
 const WEBSEED_PUMP_INTERVAL_MS = 500;
 const MIN_START_BYTES = 4 * 1024 * 1024;
 const MAX_START_BYTES = 48 * 1024 * 1024;
-// An MP4 that was not written "faststart" keeps its index (the moov atom) at
-// the end of the file, and no player can begin before it has read it.
+// non-faststart MP4s keep their moov atom at the end - no player can start before reading it
 const TAIL_BYTES = 2 * 1024 * 1024;
 const WEBSEED_MAX_INFLIGHT = 6;
 
@@ -152,7 +151,6 @@ export class Torrent extends EventEmitter {
       this.notifyWaiters();
       this.maybeMarkReady();
       this.emit('progress', this.stats());
-      // Tell the swarm we have it so peers can ask us for it back.
       this.refillRequests();
     });
 
@@ -164,9 +162,7 @@ export class Torrent extends EventEmitter {
 
     this.webSeeds = meta.urlList.map((url) => new WebSeed(url, meta));
 
-    // Start at the movie file rather than at byte 0 of the torrent: a torrent
-    // often bundles other material before it, and downloading that first would
-    // delay playback for no reason.
+    // start playhead at the movie file, not byte 0 - skip whatever junk precedes it
     const primary = this.storage.pickPrimaryVideoFile();
     if (primary) {
       this.pieces.setPlayhead(primary.offset);
@@ -271,7 +267,7 @@ export class Torrent extends EventEmitter {
         const meta = parseMetadataPayload(infoBytes, this.infoHash);
         void this.onMetadataReady(meta);
       } catch (err) {
-        // A peer sent metadata that does not hash to our info-hash: ignore it.
+        // metadata didn't hash to our info-hash
         peer.destroy(`bad metadata: ${(err as Error).message}`);
       }
     });
@@ -354,9 +350,7 @@ export class Torrent extends EventEmitter {
     const primary = this.primaryFile();
     if (!primary) return;
 
-    // Playback may start once the head of the movie is on disk. A percentage
-    // alone would mean waiting for hundreds of megabytes on a large file, so
-    // the buffer is also capped in absolute terms.
+    // cap the start buffer in absolute bytes too - percentage alone waits too long on huge files
     const [firstPiece] = this.storage!.piecesForFileRange(primary, 0, 0);
     const targetBytes = Math.min(
       Math.max(primary.length * this.options.startThreshold, MIN_START_BYTES),

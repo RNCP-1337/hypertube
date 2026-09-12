@@ -200,7 +200,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       maxAge: 600,
     });
 
-    reply.redirect(302, buildAuthorizeUrl(provider, signState(nonce, providerId)));
+    reply.redirect(buildAuthorizeUrl(provider, signState(nonce, providerId)), 302);
   });
 
   app.get('/oauth/:provider/callback', async (request, reply) => {
@@ -209,7 +209,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     const fail = (reason: string) => {
       reply.clearCookie(OAUTH_STATE_COOKIE, { path: '/api/auth' });
-      reply.redirect(302, `${config.PUBLIC_URL}/login?error=${encodeURIComponent(reason)}`);
+      reply.redirect(`${config.PUBLIC_URL}/login?error=${encodeURIComponent(reason)}`, 302);
     };
 
     const provider = getProvider(providerId);
@@ -269,6 +269,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     await establishSession(reply, request, user);
     // The SPA picks the session up with a silent refresh on this route.
-    reply.redirect(302, `${config.PUBLIC_URL}/oauth/complete`);
+    reply.redirect(`${config.PUBLIC_URL}/oauth/complete`, 302);
   });
 }

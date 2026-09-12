@@ -16,8 +16,7 @@ export class WebSeed {
     private readonly meta: Metainfo,
   ) {}
 
-  // A seed is set aside after repeated failures, then given another chance:
-  // a mirror that was briefly overloaded should not be lost for good.
+  // muted after repeated failures, then given another chance in case it was just overloaded
   get isHealthy(): boolean {
     if (this.failures < 4) return true;
     if (Date.now() >= this.mutedUntil) {
@@ -53,8 +52,7 @@ export class WebSeed {
         const start = cursor - file.offset;
         const take = Math.min(remaining, file.length - start);
 
-        // Padding exists on no mirror; requesting it would 404 and take the
-        // whole seed down with it.
+        // padding doesn't exist on the mirror - requesting it would 404 and mark the seed unhealthy
         chunks.push(
           file.padding
             ? Buffer.alloc(take)
@@ -121,9 +119,7 @@ export class WebSeed {
             return;
           }
 
-          // Some mirrors ignore Range on small files and send the whole thing
-          // with a 200. That is still usable: skip forward to the offset we
-          // want and hang up as soon as we have enough.
+          // some mirrors ignore Range and send the whole file with a 200 - skip to the offset we want
           const expected = end - start + 1;
           let skip = res.statusCode === 206 ? 0 : start;
           if (skip > MAX_DISCARD) {

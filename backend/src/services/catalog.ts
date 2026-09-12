@@ -300,24 +300,25 @@ export async function browse(
   return { movies: rows.slice(0, perPage).map(toCard), hasMore };
 }
 
-export async function getMovie(movieId: number, userId?: number): Promise<MovieDetail | null> {
-  const row = await queryOne<
-    MovieRow & {
-      summary: string | null;
-      backdrop_url: string | null;
-      runtime: number | null;
-      director: string | null;
-      producer: string | null;
-      cast_members: string[];
-      imdb_id: string | null;
-      language: string | null;
-      source_id: string;
-      comment_count: string;
-    }
-  >(
+interface MovieDetailRow extends MovieRow {
+  summary: string | null;
+  backdrop_url: string | null;
+  runtime: number | null;
+  director: string | null;
+  producer: string | null;
+  cast_members: string[];
+  imdb_id: string | null;
+  language: string | null;
+  source_id: string;
+  comment_count: string;
+  metadata_fetched_at: Date | null;
+}
+
+function fetchMovieDetailRow(movieId: number, userId?: number): Promise<MovieDetailRow | null> {
+  return queryOne<MovieDetailRow>(
     `SELECT m.id, m.title, m.year, m.rating, m.cover_url, m.genres, m.source, m.source_id,
             m.popularity, m.summary, m.backdrop_url, m.runtime, m.director, m.producer,
-            m.cast_members, m.imdb_id, m.language,
+            m.cast_members, m.imdb_id, m.language, m.metadata_fetched_at,
             (w.user_id IS NOT NULL) AS watched,
             (SELECT count(*) FROM comments c WHERE c.movie_id = m.id) AS comment_count
        FROM movies m
@@ -325,10 +326,16 @@ export async function getMovie(movieId: number, userId?: number): Promise<MovieD
       WHERE m.id = $1`,
     [movieId, userId ?? null],
   );
+}
+
+export async function getMovie(movieId: number, userId?: number): Promise<MovieDetail | null> {
+  let row = await fetchMovieDetailRow(movieId, userId);
   if (!row) return null;
 
-  // A detail page is a good moment to fill in anything still missing.
-  await enrich([movieId]).catch(() => undefined);
+  if (row.metadata_fetched_at === null) {
+    await enrich([movieId]).catch(() => undefined);
+    row = (await fetchMovieDetailRow(movieId, userId)) ?? row;
+  }
 
   const torrents = await query<{
     id: string;

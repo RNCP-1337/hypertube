@@ -83,7 +83,7 @@ export async function storeAvatarFromUrl(userId: number, url: string): Promise<s
 }
 
 export function avatarPath(fileName: string): string | null {
-  // traversal attempt must never reach the filesystem.
+  // block path traversal - only a bare filename may pass
   if (!/^[A-Za-z0-9_-]+\.jpg$/.test(fileName)) return null;
   return join(config.AVATAR_DIR, fileName);
 }

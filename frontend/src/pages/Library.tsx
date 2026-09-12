@@ -37,6 +37,8 @@ export default function Library() {
     genre: searchParams.get('genre') ?? '',
   }));
 
+  const sortTouched = useRef(searchParams.has('sort') || searchParams.has('order'));
+
   const [movies, setMovies] = useState<Movie[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -52,8 +54,11 @@ export default function Library() {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     params.set('perPage', String(PER_PAGE));
-    params.set('sort', filters.sort);
-    params.set('order', filters.order);
+
+    if (sortTouched.current) {
+      params.set('sort', filters.sort);
+      params.set('order', filters.order);
+    }
     if (filters.genre) params.set('genre', filters.genre);
     if (filters.yearMin) params.set('yearMin', filters.yearMin);
     if (filters.yearMax) params.set('yearMax', filters.yearMax);
@@ -159,7 +164,16 @@ export default function Library() {
         />
       </div>
 
-      <Filters filters={filters} genres={genres} onChange={setFilters} />
+      <Filters
+        filters={filters}
+        genres={genres}
+        onChange={(next) => {
+          if (next.sort !== filters.sort || next.order !== filters.order) {
+            sortTouched.current = true;
+          }
+          setFilters(next);
+        }}
+      />
 
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
         {search ? t('library.resultsFor', { query: search }) : t('library.popular')}

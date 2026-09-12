@@ -14,7 +14,7 @@ export async function movieRoutes(app: FastifyInstance): Promise<void> {
 
     const options = parsed.data;
 
-    // one it asks for the most popular items.
+    // no explicit sort: search results go by title, otherwise by popularity
     const sort =
       request.query && 'sort' in (request.query as object)
         ? options.sort

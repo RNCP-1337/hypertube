@@ -33,8 +33,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       level: isProduction ? 'info' : 'debug',
       transport: prettyTransport(),
     },
-    // nginx sits in front and sets X-Forwarded-*; trusting it makes rate
-    // limiting and logging see the real client address.
+    // nginx sits in front and sets X-Forwarded-*, trust it for real client ips
     trustProxy: true,
     bodyLimit: 1024 * 1024, // 1 MB for JSON; uploads go through multipart
     disableRequestLogging: false,
@@ -46,9 +45,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(cors, {
-    // The SPA is same-origin behind nginx, so credentials only need to be
-    // allowed for our own PUBLIC_URL. Token-authenticated API clients can call
-    // from anywhere - they never rely on cookies.
+    // SPA is same-origin behind nginx, so only allow credentials for PUBLIC_URL
     origin: (origin, callback) => {
       if (!origin || origin === config.PUBLIC_URL) return callback(null, true);
       return callback(null, false);

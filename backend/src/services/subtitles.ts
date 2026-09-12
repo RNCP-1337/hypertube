@@ -49,8 +49,7 @@ const KNOWN = new Set([
 export function normaliseLanguage(raw: string, fallback = 'en'): string {
   const code = raw.toLowerCase().trim().split(/[-_]/)[0];
   const two = THREE_TO_TWO[code] ?? code.slice(0, 2);
-  // File names carry things like ".asr.srt" or ".forced.srt" that look like a
-  // language code but are not one.
+  // filenames like ".asr.srt" or ".forced.srt" look like language codes but aren't
   return KNOWN.has(two) ? two : fallback;
 }
 
@@ -90,10 +89,7 @@ async function fromTorrentFiles(
     const match = /[._-]([a-z]{2,3})\.(srt|vtt|ass|ssa|sub)$/i.exec(name);
     const language = normaliseLanguage(match?.[1] ?? 'en');
 
-
-    // Subtitle files are a few dozen kilobytes; fetch them as an urgent side
-    // request so ffmpeg has something to read, without disturbing the video
-    // buffer that the player is consuming.
+    // subtitles are tiny; fetch as a pinned side-request so they don't disturb the video buffer
     const last = Math.max(0, file.length - 1);
     if (!torrent.isRangeAvailable(file, 0, last)) {
       const fetched = await torrent
@@ -249,8 +245,7 @@ export async function collectSubtitles(options: {
       already.add(language);
     }
 
-    // English is mandatory; the viewer's language is added when the audio is
-    // in a different language (or when we simply do not know the audio track).
+    // always want English; add the viewer's language too if audio isn't already in it
     const wanted = new Set<string>(['en']);
     if (audioLanguage === null || normaliseLanguage(audioLanguage) !== preferredLanguage) {
       wanted.add(preferredLanguage);

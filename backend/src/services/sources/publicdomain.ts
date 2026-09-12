@@ -66,8 +66,7 @@ async function detail(entry: CatalogueEntry): Promise<SourceMovie | null> {
       .filter((g) => g !== 'all' && g.length > 1)
       .slice(0, 6);
 
-    // Screen grabs live under /grabs/ and are the closest thing to a poster.
-    // The sidebar also uses that folder for its banner, so skip known chrome.
+    // screen grabs under /grabs/ double as posters; filter out banner/sidebar images
     const grab = [...html.matchAll(/src=(?:"|')?(grabs\/[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|gif))/gi)]
       .map((m) => m[1])
       .find((src) => !/hdsale|banner|rentme/i.test(src));
@@ -145,9 +144,7 @@ export const publicDomainSource: MovieSource = {
   },
 
   async popular(query: SourceQuery): Promise<SourceMovie[]> {
-    // The site's own "top seeded" page no longer carries data, so the whole
-    // catalogue is served alphabetically with a small baseline popularity;
-    // ranking on the front page is then driven by the other source.
+    // "top seeded" page is dead; serve the catalogue alphabetically with a flat baseline popularity
     const movies = await page(await catalogue(), query);
     return movies.map((m) => ({ ...m, popularity: 35 }));
   },

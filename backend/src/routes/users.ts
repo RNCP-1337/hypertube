@@ -109,7 +109,6 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
     const parsedId = idSchema.safeParse((request.params as { id: string }).id);
     if (!parsedId.success) throw notFound('no such user');
 
-    // return 403."
     if (parsedId.data !== request.user?.id) {
       throw forbidden('you may only modify your own profile');
     }

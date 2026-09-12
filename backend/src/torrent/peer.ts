@@ -196,8 +196,7 @@ export class Peer extends EventEmitter {
       case 'extended':
         this.handleExtended(message.extensionId, message.payload);
         break;
-      // 'request' / 'cancel': we are a leecher-first client and stay choked,
-      // so we simply ignore upload requests. 'port' is DHT, unused here.
+      // we're leecher-only and stay choked, so ignore request/cancel; port is DHT, unused
       default:
         break;
     }

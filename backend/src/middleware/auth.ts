@@ -45,8 +45,7 @@ async function resolve(request: FastifyRequest): Promise<Resolution> {
   request.tokenType = payload.typ;
   request.tokenScope = payload.scope ?? 'read';
 
-  // A client_credentials token is valid but has no user behind it: `sub` holds
-  // the client id rather than a user id.
+  // client_credentials tokens have no user behind them, `sub` is the client id
   if (payload.typ === 'api' && !/^\d+$/.test(payload.sub)) return { kind: 'client' };
 
   const user = await findUserById(Number(payload.sub));

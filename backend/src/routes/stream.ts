@@ -1,4 +1,5 @@
 import { createReadStream, promises as fs } from 'node:fs';
+import { extname } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { config } from '../config';
 import { query, queryOne } from '../db/pool';
@@ -53,8 +54,7 @@ async function startPlayback(movieId: number, torrentId?: number): Promise<Torre
     torrentId: Number(row.id),
   });
 
-  // Remember which info-hash serves this quality, so a restart can skip the
-  // metadata exchange entirely.
+  // cache the info-hash so a restart can skip the metadata exchange
   await query(
     'UPDATE movie_torrents SET info_hash = COALESCE(info_hash, $2) WHERE id = $1',
     [row.id, torrent.infoHashHex],
@@ -105,6 +105,16 @@ function parseRange(
 
 const CHUNK_BYTES = 8 * 1024 * 1024;
 
+const NATIVE_CONTENT_TYPES: Record<string, string> = {
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+};
+
+function nativeContentType(filePath: string): string {
+  return NATIVE_CONTENT_TYPES[extname(filePath).toLowerCase()] ?? 'video/mp4';
+}
+
 export async function streamRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/:id/play', { preHandler: requireAuth }, async (request, reply) => {
@@ -114,8 +124,7 @@ export async function streamRoutes(app: FastifyInstance): Promise<void> {
 
     const torrent = await startPlayback(movieId, torrentId);
 
-    // Metadata retrieval and subtitle collection run in the background: the
-    // background in a non-blocking manner").
+    // fetch metadata + subtitles in the background, don't block the response
     void waitForMetadata(torrent)
       .then(async () => {
         const movie = await queryOne<{ imdb_id: string | null; title: string; language: string | null }>(
@@ -231,8 +240,7 @@ export async function streamRoutes(app: FastifyInstance): Promise<void> {
       throw notFound('no such subtitle track');
     }
 
-    // WebVTT tracks are a few dozen kilobytes; sending a buffer keeps the
-    // Content-Length accurate and avoids streaming machinery for nothing.
+    // small files, just buffer them instead of setting up a stream
     const vtt = await fs.readFile(row.file_path);
     return reply
       .header('Content-Type', 'text/vtt; charset=utf-8')
@@ -269,7 +277,7 @@ async function serveRanged(
 
   reply
     .code(range.partial ? 206 : 200)
-    .header('Content-Type', 'video/mp4')
+    .header('Content-Type', nativeContentType(file.absolutePath))
     .header('Accept-Ranges', 'bytes')
     .header('Content-Length', String(length))
     .header('Cache-Control', 'no-store');
@@ -289,8 +297,7 @@ async function serveTranscoded(
   torrent: Torrent,
   file: ResolvedFile,
 ): Promise<void> {
-  // ffmpeg needs a readable header before it can start, and enough data ahead
-  // of the playhead to keep going.
+  // ffmpeg needs a readable header plus some data ahead of the playhead
   const warmup = Math.min(file.length - 1, 24 * 1024 * 1024);
   try {
     await torrent.waitForRange(file, 0, warmup);
@@ -302,8 +309,7 @@ async function serveTranscoded(
     return;
   }
 
-  // The client cannot byte-seek a live transcode, so seeking is expressed as
-  // ?t=<seconds> and ffmpeg starts there instead.
+  // can't byte-seek a live transcode, so seeking is ?t=<seconds> instead
   const seconds = Number((request.query as { t?: string }).t ?? 0);
   const startSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
 

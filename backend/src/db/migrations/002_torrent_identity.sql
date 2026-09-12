@@ -1,6 +1,5 @@
--- A torrent is identified by where it comes from, not by the info-hash we
--- happen to have learnt afterwards: keying the upsert on info_hash created a
--- duplicate row every time the hash was filled in.
+-- identify a torrent by its source url/magnet, not info_hash - keying the
+-- upsert on info_hash was creating a duplicate row once the hash got filled in
 
 DELETE FROM movie_torrents t
       USING movie_torrents keep
