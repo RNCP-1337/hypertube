@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink-900 text-slate-100 font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-ink-900;
+  }
+
+  ::selection {
+    @apply bg-accent/40;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+           text-sm font-semibold transition-colors disabled:cursor-not-allowed
+           disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply btn border border-ink-600 bg-ink-800 text-slate-200 hover:border-ink-600/80 hover:bg-ink-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-300 hover:bg-ink-800 hover:text-white;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-ink-600 bg-ink-850 px-3.5 py-2.5 text-sm
+           text-slate-100 placeholder:text-muted/70 transition-colors
+           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .field-error {
+    @apply border-accent focus:border-accent focus:ring-accent;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-slate-300;
+  }
+
+  .card {
+    @apply rounded-xl border border-ink-700 bg-ink-850;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-ink-600 bg-ink-800
+           px-2.5 py-0.5 text-xs text-slate-300;
+  }
+}
+
+/* thin scrollbars, dark to match the page */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #30363d;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+video::cue {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 1rem;
+}

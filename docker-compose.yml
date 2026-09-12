@@ -1,0 +1,94 @@
+# Every image here ships arm64 and amd64 manifests, so the stack runs
+# natively on Apple Silicon and on Intel. `make up` sets the platform.
+
+name: hypertube
+
+services:
+  # database
+  postgres:
+    image: postgres:16-alpine
+    container_name: hypertube-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # keep ORDER BY consistent across machines
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [hypertube]
+
+  # SMTP catcher for the password-reset mails (dev)
+  mailhog:
+    image: axllent/mailpit:latest
+    container_name: hypertube-mailhog
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "8025:8025"   # web UI
+    networks: [hypertube]
+
+  # backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    container_name: hypertube-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 3000
+    volumes:
+      - media-data:/data
+    ports:
+      # incoming BitTorrent peers
+      - "${TORRENT_PORT:-6881}:${TORRENT_PORT:-6881}"
+      - "${TORRENT_PORT:-6881}:${TORRENT_PORT:-6881}/udp"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [hypertube]
+
+  # frontend
+  # React bundle served by nginx, which also proxies /api to the backend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: hypertube-frontend
+    restart: unless-stopped
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks: [hypertube]
+
+volumes:
+  postgres-data:
+  media-data:
+
+networks:
+  hypertube:
+    driver: bridge

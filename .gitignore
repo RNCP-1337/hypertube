@@ -1,0 +1,33 @@
+# ---- Secrets (ELIMINATORY: never commit) ----
+.env
+.env.*
+!.env.example
+
+# ---- Dependencies ----
+node_modules/
+.pnpm-store/
+
+# ---- Build output ----
+dist/
+build/
+*.tsbuildinfo
+
+# ---- Runtime data (downloaded media, torrents, uploads) ----
+data/
+!data/.gitkeep
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+logs/
+
+# ---- OS / editor ----
+.DS_Store
+.AppleDouble
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- Docker ----
+.docker-cache/
