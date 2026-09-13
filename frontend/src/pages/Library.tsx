@@ -1,10 +1,87 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api, type MovieCard as Movie } from '../api/client';
+import { api, type MovieCard as Movie, type MovieDetail } from '../api/client';
 import MovieCard, { MovieCardSkeleton } from '../components/MovieCard';
 import Filters, { DEFAULT_FILTERS, type LibraryFilters } from '../components/Filters';
-import { Alert, Spinner } from '../components/ui';
+import { Alert, Field, Spinner } from '../components/ui';
+
+function AddMovieForm({ onClose, onCreated }: { onClose: () => void; onCreated: (id: number) => void }) {
+  const { t } = useTranslation();
+  const [title, setTitle] = useState('');
+  const [year, setYear] = useState('');
+  const [source, setSource] = useState(''); // magnet URI or .torrent URL
+  const [quality, setQuality] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body: Record<string, unknown> = { title: title.trim() };
+      if (year) body.year = Number(year);
+      if (quality) body.quality = quality.trim();
+      if (source.trim().startsWith('magnet:')) body.magnetUri = source.trim();
+      else body.torrentUrl = source.trim();
+
+      const data = await api.post<{ movie: MovieDetail }>('/movies', body);
+      onCreated(data.movie.id);
+    } catch {
+      setError(t('errors.generic'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="card space-y-4 p-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        {t('library.addMovieTitle')}
+      </h2>
+      {error ? <Alert kind="error">{error}</Alert> : null}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label={t('library.titleField')}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+          maxLength={300}
+        />
+        <Field
+          label={t('library.yearField')}
+          type="number"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          min={1878}
+          max={2100}
+        />
+        <Field
+          label={t('library.magnetOrTorrent')}
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          required
+          className="sm:col-span-2"
+        />
+        <Field
+          label={`${t('library.qualityField')} (${t('common.optional')})`}
+          value={quality}
+          onChange={(e) => setQuality(e.target.value)}
+          maxLength={20}
+        />
+      </div>
+      <div className="flex items-center gap-3">
+        <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">
+          {t('common.save')}
+        </button>
+        <button type="button" onClick={onClose} className="btn-ghost">
+          {t('common.cancel')}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 interface BrowseResponse {
   movies: Movie[];
@@ -25,7 +102,9 @@ function useDebounced<T>(value: T, delay: number): T {
 
 export default function Library() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '');
   const search = useDebounced(searchInput.trim(), 450);
@@ -135,10 +214,22 @@ export default function Library() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">{t('library.title')}</h1>
-        <p className="text-sm text-muted">{t('app.tagline')}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">{t('library.title')}</h1>
+          <p className="text-sm text-muted">{t('app.tagline')}</p>
+        </div>
+        <button type="button" onClick={() => setShowAddForm((v) => !v)} className="btn-secondary">
+          {t('library.addMovie')}
+        </button>
       </div>
+
+      {showAddForm ? (
+        <AddMovieForm
+          onClose={() => setShowAddForm(false)}
+          onCreated={(id) => navigate(`/movies/${id}`)}
+        />
+      ) : null}
 
       <div className="relative">
         <svg

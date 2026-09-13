@@ -77,7 +77,13 @@
     "from": "Desde",
     "to": "Hasta",
     "clearFilters": "Limpiar filtros",
-    "apply": "Aplicar"
+    "apply": "Aplicar",
+    "addMovie": "Añadir película",
+    "addMovieTitle": "Registrar una película",
+    "titleField": "Título",
+    "yearField": "Año",
+    "magnetOrTorrent": "Enlace magnet o URL .torrent",
+    "qualityField": "Etiqueta de calidad"
   },
   "movie": {
     "play": "Reproducir",
@@ -96,6 +102,8 @@
     "quality": "Calidad",
     "minutes": "{{count}} min",
     "unknown": "Desconocido",
+    "delete": "Eliminar película",
+    "deleteConfirm": "¿Eliminar esta película? También se borrarán los archivos descargados.",
     "preparing": "Preparando la reproducción...",
     "connecting": "Conectando con los pares...",
     "buffering": "Almacenando en búfer, empieza enseguida...",
@@ -173,6 +181,8 @@
     "clear": "Limpiar",
     "yes": "Sí",
     "no": "No",
-    "optional": "opcional"
+    "optional": "opcional",
+    "cancel": "Cancelar",
+    "save": "Guardar"
   }
 }

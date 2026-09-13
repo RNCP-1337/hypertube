@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api, type MovieDetail as Movie } from '../api/client';
 import VideoPlayer from '../components/VideoPlayer';
@@ -19,11 +19,13 @@ function Meta({ label, value }: { label: string; value: string | number | null }
 export default function MovieDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +52,19 @@ export default function MovieDetail() {
   const markWatched = useCallback(() => {
     setMovie((current) => (current ? { ...current, watched: true } : current));
   }, []);
+
+  const deleteMovie = useCallback(async () => {
+    if (!movie) return;
+    if (!window.confirm(t('movie.deleteConfirm'))) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/movies/${movie.id}`);
+      navigate('/', { replace: true });
+    } catch {
+      setError(t('errors.generic'));
+      setDeleting(false);
+    }
+  }, [movie, navigate, t]);
 
   if (loading) return <Loading label={t('common.loading')} />;
 
@@ -113,14 +128,25 @@ export default function MovieDetail() {
             </div>
           ) : null}
 
-          {!playing ? (
-            <button type="button" onClick={() => setPlaying(true)} className="btn-primary px-5 py-3">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                <path d="M6 4l10 6-10 6V4z" />
-              </svg>
-              {movie.watched ? t('movie.resume') : t('movie.play')}
+          <div className="flex flex-wrap items-center gap-3">
+            {!playing ? (
+              <button type="button" onClick={() => setPlaying(true)} className="btn-primary px-5 py-3">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                  <path d="M6 4l10 6-10 6V4z" />
+                </svg>
+                {movie.watched ? t('movie.resume') : t('movie.play')}
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => void deleteMovie()}
+              disabled={deleting}
+              className="btn-secondary border-red-500/40 text-red-400 hover:border-red-500/70 hover:text-red-300 disabled:opacity-50"
+            >
+              {t('movie.delete')}
             </button>
-          ) : null}
+          </div>
 
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">

@@ -77,7 +77,13 @@
     "from": "From",
     "to": "To",
     "clearFilters": "Clear filters",
-    "apply": "Apply"
+    "apply": "Apply",
+    "addMovie": "Add movie",
+    "addMovieTitle": "Register a film",
+    "titleField": "Title",
+    "yearField": "Year",
+    "magnetOrTorrent": "Magnet URI or .torrent URL",
+    "qualityField": "Quality label"
   },
   "movie": {
     "play": "Play",
@@ -96,6 +102,8 @@
     "quality": "Quality",
     "minutes": "{{count}} min",
     "unknown": "Unknown",
+    "delete": "Delete movie",
+    "deleteConfirm": "Delete this movie? This also removes any downloaded files.",
     "preparing": "Preparing the stream...",
     "connecting": "Connecting to peers...",
     "buffering": "Buffering, playback starts shortly...",
@@ -173,6 +181,8 @@
     "clear": "Clear",
     "yes": "Yes",
     "no": "No",
-    "optional": "optional"
+    "optional": "optional",
+    "cancel": "Cancel",
+    "save": "Save"
   }
 }
