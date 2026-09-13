@@ -115,6 +115,8 @@ function nativeContentType(filePath: string): string {
   return NATIVE_CONTENT_TYPES[extname(filePath).toLowerCase()] ?? 'video/mp4';
 }
 
+const ALLOWED_RESOLUTIONS = new Set([2160, 1440, 1080, 720, 480, 360, 240]);
+
 export async function streamRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/:id/play', { preHandler: requireAuth }, async (request, reply) => {
@@ -197,10 +199,15 @@ export async function streamRoutes(app: FastifyInstance): Promise<void> {
 
     await torrentEngine.touch(torrent.infoHashHex);
 
-    if (isNativelyPlayable(file.absolutePath)) {
+    const resolution = (request.query as { resolution?: string }).resolution;
+    const targetHeight = resolution && resolution !== 'source' ? Number(resolution) : undefined;
+    const validHeight =
+      targetHeight && ALLOWED_RESOLUTIONS.has(targetHeight) ? targetHeight : undefined;
+
+    if (!validHeight && isNativelyPlayable(file.absolutePath)) {
       await serveRanged(request, reply, torrent, file);
     } else {
-      await serveTranscoded(request, reply, torrent, file);
+      await serveTranscoded(request, reply, torrent, file, validHeight);
     }
   });
 
@@ -296,6 +303,7 @@ async function serveTranscoded(
   reply: FastifyReply,
   torrent: Torrent,
   file: ResolvedFile,
+  targetHeight?: number,
 ): Promise<void> {
   // ffmpeg needs a readable header plus some data ahead of the playhead
   const warmup = Math.min(file.length - 1, 24 * 1024 * 1024);
@@ -325,7 +333,7 @@ async function serveTranscoded(
       .catch(() => undefined);
   }
 
-  const handle = transcodeToMp4(file.absolutePath, info, startSeconds);
+  const handle = transcodeToMp4(file.absolutePath, info, startSeconds, targetHeight);
 
   reply
     .code(200)

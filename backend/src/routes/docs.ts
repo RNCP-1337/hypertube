@@ -156,6 +156,21 @@ const ROUTES: RouteDoc[] = [
   },
   {
     method: 'POST',
+    path: '/api/movies',
+    auth: 'bearer (write scope)',
+    summary: 'Register a movie manually (bonus)',
+    body: 'title, year?, summary?, coverUrl?, genres?, quality?, magnetUri or torrentUrl',
+    returns: '{ movie }',
+  },
+  {
+    method: 'DELETE',
+    path: '/api/movies/:id',
+    auth: 'bearer (write scope)',
+    summary: 'Remove a movie, its torrents and any downloaded files (bonus)',
+    returns: '204 No Content',
+  },
+  {
+    method: 'POST',
     path: '/api/movies/:id/play',
     auth: 'bearer',
     summary: 'Start the torrent in the background',
@@ -174,6 +189,7 @@ const ROUTES: RouteDoc[] = [
     path: '/api/movies/:id/stream',
     auth: 'bearer',
     summary: 'The video, with byte ranges; non-native containers are transcoded on the fly',
+    body: 'query: resolution? (2160/1440/1080/720/480/360/240, bonus - forces a re-encode)',
     returns: '206 video/mp4',
   },
   {

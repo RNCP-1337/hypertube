@@ -107,7 +107,9 @@
     "retry": "Reintentar",
     "subtitles": "Subtítulos",
     "subtitlesOff": "Desactivados",
-    "selectQuality": "Resolución",
+    "selectQuality": "Fuente",
+    "selectResolution": "Resolución",
+    "resolutionAuto": "Auto",
     "notFound": "Esta película no está en el catálogo."
   },
   "comments": {

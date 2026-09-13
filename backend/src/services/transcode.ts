@@ -102,9 +102,12 @@ export function transcodeToMp4(
   filePath: string,
   probeResult: ProbeResult | null,
   startSeconds = 0,
+  targetHeight?: number,
 ): TranscodeHandle {
   const canCopyVideo =
-    probeResult?.videoCodec !== null && BROWSER_VIDEO_CODECS.has(probeResult?.videoCodec ?? '');
+    !targetHeight &&
+    probeResult?.videoCodec !== null &&
+    BROWSER_VIDEO_CODECS.has(probeResult?.videoCodec ?? '');
   const canCopyAudio =
     probeResult?.audioCodec !== null && BROWSER_AUDIO_CODECS.has(probeResult?.audioCodec ?? '');
 
@@ -130,6 +133,9 @@ export function transcodeToMp4(
       // Keyframe every 2s keeps the fragments small and seeking responsive.
       '-force_key_frames', 'expr:gte(t,n_forced*2)',
     );
+    if (targetHeight) {
+      args.push('-vf', `scale=-2:'min(${targetHeight},ih)'`);
+    }
   }
 
   if (canCopyAudio) {

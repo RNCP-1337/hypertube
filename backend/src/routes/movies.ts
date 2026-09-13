@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import { optionalAuth, requireAuth } from '../middleware/auth';
+import { optionalAuth, requireAuth, requireWriteScope } from '../middleware/auth';
 import { notFound, unprocessable } from '../middleware/errors';
-import { browseQuerySchema, idSchema } from '../lib/validation';
-import { browse, genres, getMovie } from '../services/catalog';
+import { browseQuerySchema, createMovieSchema, idSchema } from '../lib/validation';
+import { browse, createMovie, deleteMovie, genres, getMovie } from '../services/catalog';
 import { sourceInfo } from '../services/sources';
 import { streamRoutes } from './stream';
 
@@ -56,6 +56,25 @@ export async function movieRoutes(app: FastifyInstance): Promise<void> {
     if (!movie) throw notFound('no such movie');
 
     reply.send({ movie });
+  });
+
+  // bonus: "more API routes to add, delete movies, etc."
+  app.post('/', { preHandler: requireWriteScope }, async (request, reply) => {
+    const parsed = createMovieSchema.safeParse(request.body);
+    if (!parsed.success) throw unprocessable('validation failed', parsed.error.issues);
+
+    const movieId = await createMovie(parsed.data);
+    const movie = await getMovie(movieId, request.user?.id);
+    reply.code(201).send({ movie });
+  });
+
+  app.delete('/:id', { preHandler: requireWriteScope }, async (request, reply) => {
+    const parsed = idSchema.safeParse((request.params as { id: string }).id);
+    if (!parsed.success) throw notFound('no such movie');
+
+    const deleted = await deleteMovie(parsed.data);
+    if (!deleted) throw notFound('no such movie');
+    reply.code(204).send();
   });
 
   await app.register(streamRoutes);

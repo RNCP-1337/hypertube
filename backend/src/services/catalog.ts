@@ -1,5 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import { mapLimit } from '../lib/cache';
 import { query, queryOne } from '../db/pool';
+import { torrentEngine } from '../torrent/engine';
 import { lookupMetadata } from './metadata';
 import { popularFromSources, searchSources, type SourceMovie } from './sources';
 
@@ -410,6 +412,64 @@ export async function genres(): Promise<string[]> {
       LIMIT 100`,
   );
   return rows.map((r) => r.genre);
+}
+
+export interface CreateMovieInput {
+  title: string;
+  year?: number;
+  summary?: string;
+  coverUrl?: string;
+  genres?: string[];
+  quality: string;
+  magnetUri?: string;
+  torrentUrl?: string;
+}
+
+export async function createMovie(input: CreateMovieInput): Promise<number> {
+  const sourceId = randomBytes(12).toString('hex');
+
+  const row = await queryOne<{ id: string }>(
+    `INSERT INTO movies (source, source_id, title, slug, year, summary, cover_url, genres, popularity)
+     VALUES ('manual', $1, $2, $3, $4, $5, $6, $7, 0)
+     RETURNING id`,
+    [
+      sourceId,
+      input.title,
+      slugify(input.title),
+      input.year ?? null,
+      input.summary ?? null,
+      input.coverUrl ?? null,
+      input.genres ?? [],
+    ],
+  );
+  if (!row) throw new Error('movie insertion failed');
+  const movieId = Number(row.id);
+
+  await query(
+    `INSERT INTO movie_torrents (movie_id, quality, magnet_uri, torrent_url)
+     VALUES ($1, $2, $3, $4)`,
+    [movieId, input.quality, input.magnetUri ?? null, input.torrentUrl ?? null],
+  );
+
+  return movieId;
+}
+
+export async function deleteMovie(movieId: number): Promise<boolean> {
+  const torrents = await query<{ info_hash: string | null }>(
+    'SELECT info_hash FROM movie_torrents WHERE movie_id = $1',
+    [movieId],
+  );
+
+  for (const row of torrents) {
+    if (!row.info_hash) continue;
+    await torrentEngine.remove(row.info_hash, true).catch(() => undefined);
+  }
+
+  // cascades to movie_torrents, downloads, subtitles, comments, watch_history
+  const deleted = await queryOne<{ id: string }>('DELETE FROM movies WHERE id = $1 RETURNING id', [
+    movieId,
+  ]);
+  return deleted !== null;
 }
 
 export async function markWatched(

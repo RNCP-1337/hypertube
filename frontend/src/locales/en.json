@@ -107,7 +107,9 @@
     "retry": "Try again",
     "subtitles": "Subtitles",
     "subtitlesOff": "Off",
-    "selectQuality": "Resolution",
+    "selectQuality": "Source",
+    "selectResolution": "Resolution",
+    "resolutionAuto": "Auto",
     "notFound": "This film is not in the catalogue."
   },
   "comments": {

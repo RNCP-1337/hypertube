@@ -115,6 +115,22 @@ export const playSchema = z.object({
   torrentId: idSchema.optional(),
 });
 
+export const createMovieSchema = z
+  .object({
+    title: z.string().trim().min(1).max(300),
+    year: z.coerce.number().int().min(1878).max(2100).optional(),
+    summary: z.string().trim().max(4000).optional(),
+    coverUrl: z.string().url().max(2048).optional(),
+    genres: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
+    quality: z.string().trim().min(1).max(20).default('unknown'),
+    magnetUri: z.string().trim().min(10).max(4000).optional(),
+    torrentUrl: z.string().url().max(2048).optional(),
+  })
+  .refine((data) => data.magnetUri ?? data.torrentUrl, {
+    message: 'magnetUri or torrentUrl is required',
+    path: ['magnetUri'],
+  });
+
 export const tokenRequestSchema = z.discriminatedUnion('grant_type', [
   z.object({
     grant_type: z.literal('client_credentials'),
